@@ -20,25 +20,25 @@
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> MatrixXd;
 class FE{
     public:
-        FE(unsigned int nelx,unsigned int nely,unsigned int length, unsigned int breadth,double youngs_mod, double pois_rat); // The constructor takes the required arguments
-        double basis_function(unsigned int node, double xi,double eta); //Calculates the basis function corresponding to the node "node" and at the point 'xi' and 'eta' in the parametric space
-        std::vector<double> basis_gradient(unsigned int node, double xi,double eta); //Calculates the gradient of the basis function - similar to above
+        FE(unsigned int nelx,unsigned int nely,unsigned int nelz,double length, double breadth,double height,double youngs_mod, double pois_rat); // The constructor takes the required arguments
+        double basis_function(unsigned int node, double xi,double eta, double kap); //Calculates the basis function corresponding to the node "node" and at the point 'xi' and 'eta' in the parametric space
+        std::vector<double> basis_gradient(unsigned int node, double xi,double eta,double kap); //Calculates the gradient of the basis function - similar to above
         void mesh(unsigned int no_quad_points); // Function to mesh the domain - Fills the Nodal connectivity and the Elemental Conncectivity matrices - Can even handle different number of elements along each axis
         // As of now, user will only have ability to define where the boundary conditions act from outside the code but can change the values of boundary conditions from outside the code
-        void define_boundary_condition(double force, double g); // Function to fill the boundary_values (stores the values at the boundaries) and the boundary_nodes (stores the global node number of the nodes on the boundary)
+        void define_boundary_condition(double force, double g1,double g2); // Function to fill the boundary_values (stores the values at the boundaries) and the boundary_nodes (stores the global node number of the nodes on the boundary)
         double C(unsigned int i, unsigned int j, unsigned int k, unsigned int l); // Used to get the elasticity tensor C
         void init_data_structs(); //To resize all the global matrices based on the mesh - Internal function
-        void cal_jac(unsigned int q1, unsigned int q2);
+        void cal_jac(unsigned int q1, unsigned int q2,unsigned int q3);
         void cal_k_local(); // Calculates the K local for one element - As all elements are the same, can use the same klocal
-        void assemble(Eigen::MatrixXd x,double penal); //Uses the klocal to assemble K global using the volume fractions
+        void assemble(); //Uses the klocal to assemble K global using the volume fractions
         Eigen::VectorXd solve(); // Solves and returns U which is then used in the toplogy code
         void fem_to_vtk();
 
 
         // Class datastructures
-        double L,B,g1,f1,E,nu,lambda,mu,penal_,detJ; //Standard constants - L - Length, B - breadth, g1 - Dirichlet conditon, E - Youngs Modulus, nu - Poissons ration, lambda and mu
+        double L,B,H,g1_,g2_,f1,E,nu,lambda,mu,penal_,detJ; //Standard constants - L - Length, B - breadth, g1 - Dirichlet conditon, E - Youngs Modulus, nu - Poissons ration, lambda and mu
         // are the lame's parameters
-        unsigned int nelx_,nely_,nel,nnx,nny,no_of_nodes,no_of_nodes_per_element,total_dofs,dofs_per_ele,quad_rule,dim; // standard mesh descriptions
+        unsigned int nelx_,nely_,nelz_,nel,nnx,nny,nnz,no_of_nodes,no_of_nodes_per_element,total_dofs,dofs_per_ele,quad_rule,dim; // standard mesh descriptions
 
 
         std::vector<std::vector<double> > NC; //Nodal Connectivity - NC[i] gives the x and y - coordinate of the ith global node. Size - (No.of nodes, dim)
@@ -56,8 +56,10 @@ class FE{
         Eigen::VectorXd U; // Using Eigne vector to define to solution for ease of solving the linear equation
         Eigen::VectorXd F; // No forcing but the dirichlet conditions will apply
 //        Eigen::MatrixXd K; // Not using sparse matrix to get maximum speed irrespective of memory usage
-        Eigen::SparseMatrix<double> K; // The global stiffness matrix - Sparse because its a tridiagonal matrix and so alot of elements are 0 - saves memory
-
+//        Eigen::SparseMatrix<double> K; // The global stiffness matrix - Sparse because its a tridiagonal matrix and so alot of elements are 0 - saves memory
+        Eigen::MatrixXd K;
+        Eigen::MatrixXd M;
+        Eigen::MatrixXd damp;
 };
 
 #endif
